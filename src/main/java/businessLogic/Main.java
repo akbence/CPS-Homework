@@ -12,12 +12,15 @@ import org.apache.qpid.proton.amqp.Decimal128;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceOperations;
 
 import cloud.App;
-import senor.AbstractActuator;
-import senor.Fan;
-import senor.Heater;
-import senor.States;
-import senor.TempSensor;
-import senor.WindowHandler;
+import dds.Domain;
+import dds.UvegHazPublisher;
+import dds.UvegHazSubscriber;
+import sensor.AbstractActuator;
+import sensor.Fan;
+import sensor.Heater;
+import sensor.States;
+import sensor.TempSensor;
+import sensor.WindowHandler;
 
 public class Main {
 	
@@ -31,6 +34,7 @@ public class Main {
 
 	public static void main(String args[]) {
 		
+		Domain domain= new Domain();
 		List<AbstractActuator> actuators=new ArrayList<AbstractActuator>();
 		actuators.add(new Fan());
 		actuators.add(new Heater());
@@ -63,7 +67,6 @@ public class Main {
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		}

@@ -1,8 +1,11 @@
-package senor;
+package sensor;
 
 import java.util.Random;
 
+import dds.UvegHazPublisher;
+
 public abstract class AbstractActuator {
+
 
 	Random rand= new Random();
 	States local=States.NORMAL;
