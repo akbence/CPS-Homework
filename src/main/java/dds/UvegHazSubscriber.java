@@ -60,25 +60,41 @@ import com.rti.dds.subscription.*;
 import com.rti.dds.topic.*;
 import com.rti.ndds.config.*;
 
+import sensor.TempSensor;
+
 // ===========================================================================
 
-public class UvegHazSubscriber {
+public class UvegHazSubscriber implements Runnable{
     // -----------------------------------------------------------------------
     // Public Methods
     // -----------------------------------------------------------------------
 
-    public static void main(String[] args) {
+	public void run() {
+	
+		
+		main();
+		
+	}
+	
+	 TempSensor tempSensor=null;
+	 DomainParticipant participant = null;
+     Subscriber subscriber = null;
+     Topic topic = null;
+     DataReaderListener listener = null;
+     UvegHazDataReader reader = null;
+     int domainId = 0;
+
+    public void main( ) {
         // --- Get domain ID --- //
-        int domainId = 0;
-        if (args.length >= 1) {
-            domainId = Integer.valueOf(args[0]).intValue();
-        }
+//        if (args.length >= 1) {
+//            domainId = Integer.valueOf(args[0]).intValue();
+//        }
 
         // -- Get max loop count; 0 means infinite loop --- //
         int sampleCount = 0;
-        if (args.length >= 2) {
-            sampleCount = Integer.valueOf(args[1]).intValue();
-        }
+//        if (args.length >= 2) {
+//            sampleCount = Integer.valueOf(args[1]).intValue();
+//        }
 
         /* Uncomment this to turn on additional logging
         Logger.get_instance().set_verbosity_by_category(
@@ -96,88 +112,85 @@ public class UvegHazSubscriber {
 
     // --- Constructors: -----------------------------------------------------
 
-    private UvegHazSubscriber() {
+    public UvegHazSubscriber(TempSensor tempS) {
         super();
+        tempSensor=tempS;
+        // --- Create participant --- //
+
+        /* To customize participant QoS, use
+        the configuration file
+        USER_QOS_PROFILES.xml */
+
+        participant = DomainParticipantFactory.TheParticipantFactory.
+        create_participant(
+            domainId, DomainParticipantFactory.PARTICIPANT_QOS_DEFAULT,
+            null /* listener */, StatusKind.STATUS_MASK_NONE);
+        if (participant == null) {
+            System.err.println("create_participant error\n");
+            return;
+        }                         
+
+        // --- Create subscriber --- //
+
+        /* To customize subscriber QoS, use
+        the configuration file USER_QOS_PROFILES.xml */
+
+        subscriber = participant.create_subscriber(
+            DomainParticipant.SUBSCRIBER_QOS_DEFAULT, null /* listener */,
+            StatusKind.STATUS_MASK_NONE);
+        if (subscriber == null) {
+            System.err.println("create_subscriber error\n");
+            return;
+        }     
+
+        // --- Create topic --- //
+
+        /* Register type before creating topic */
+        String typeName = UvegHazTypeSupport.get_type_name(); 
+        UvegHazTypeSupport.register_type(participant, typeName);
+
+        /* To customize topic QoS, use
+        the configuration file USER_QOS_PROFILES.xml */
+
+        topic = participant.create_topic(
+//            "Example UvegHaz",
+        		"temp",
+            typeName, DomainParticipant.TOPIC_QOS_DEFAULT,
+            null /* listener */, StatusKind.STATUS_MASK_NONE);
+        if (topic == null) {
+            System.err.println("create_topic error\n");
+            return;
+        }                     
+
+        // --- Create reader --- //
+
+        listener = new UvegHazListener();
+
+        /* To customize data reader QoS, use
+        the configuration file USER_QOS_PROFILES.xml */
+
+        reader = (UvegHazDataReader)
+        subscriber.create_datareader(
+            topic, Subscriber.DATAREADER_QOS_DEFAULT, listener,
+            StatusKind.STATUS_MASK_ALL);
+        if (reader == null) {
+            System.err.println("create_datareader error\n");
+            return;
+        }                         
+
     }
 
     // -----------------------------------------------------------------------
 
-    private static void subscriberMain(int domainId, int sampleCount) {
+    private void subscriberMain(int domainId, int sampleCount) {
 
-        DomainParticipant participant = null;
-        Subscriber subscriber = null;
-        Topic topic = null;
-        DataReaderListener listener = null;
-        UvegHazDataReader reader = null;
-
+       
         try {
 
-            // --- Create participant --- //
-
-            /* To customize participant QoS, use
-            the configuration file
-            USER_QOS_PROFILES.xml */
-
-            participant = DomainParticipantFactory.TheParticipantFactory.
-            create_participant(
-                domainId, DomainParticipantFactory.PARTICIPANT_QOS_DEFAULT,
-                null /* listener */, StatusKind.STATUS_MASK_NONE);
-            if (participant == null) {
-                System.err.println("create_participant error\n");
-                return;
-            }                         
-
-            // --- Create subscriber --- //
-
-            /* To customize subscriber QoS, use
-            the configuration file USER_QOS_PROFILES.xml */
-
-            subscriber = participant.create_subscriber(
-                DomainParticipant.SUBSCRIBER_QOS_DEFAULT, null /* listener */,
-                StatusKind.STATUS_MASK_NONE);
-            if (subscriber == null) {
-                System.err.println("create_subscriber error\n");
-                return;
-            }     
-
-            // --- Create topic --- //
-
-            /* Register type before creating topic */
-            String typeName = UvegHazTypeSupport.get_type_name(); 
-            UvegHazTypeSupport.register_type(participant, typeName);
-
-            /* To customize topic QoS, use
-            the configuration file USER_QOS_PROFILES.xml */
-
-            topic = participant.create_topic(
-//                "Example UvegHaz",
-            		"temp",
-                typeName, DomainParticipant.TOPIC_QOS_DEFAULT,
-                null /* listener */, StatusKind.STATUS_MASK_NONE);
-            if (topic == null) {
-                System.err.println("create_topic error\n");
-                return;
-            }                     
-
-            // --- Create reader --- //
-
-            listener = new UvegHazListener();
-
-            /* To customize data reader QoS, use
-            the configuration file USER_QOS_PROFILES.xml */
-
-            reader = (UvegHazDataReader)
-            subscriber.create_datareader(
-                topic, Subscriber.DATAREADER_QOS_DEFAULT, listener,
-                StatusKind.STATUS_MASK_ALL);
-            if (reader == null) {
-                System.err.println("create_datareader error\n");
-                return;
-            }                         
-
+           
             // --- Wait for data --- //
 
-            final long receivePeriodSec = 4;
+            final long receivePeriodSec = 5;
 
             for (int count = 0;
             (sampleCount == 0) || (count < sampleCount);
@@ -219,6 +232,8 @@ public class UvegHazSubscriber {
 
     private static class UvegHazListener extends DataReaderAdapter {
 
+
+    	
         UvegHazSeq _dataSeq = new UvegHazSeq();
         SampleInfoSeq _infoSeq = new SampleInfoSeq();
 
@@ -240,7 +255,7 @@ public class UvegHazSubscriber {
                     if (info.valid_data) {
                         System.out.println(
                             ((UvegHaz)_dataSeq.get(i)).toString("Received",0));
-                        
+                        TempSensor.temperature=((UvegHaz)_dataSeq.get(i)).Value;
 //TODO: adat innen jön
                     }
                 }
@@ -251,5 +266,7 @@ public class UvegHazSubscriber {
             }
         }
     }
+
+	
 }
 

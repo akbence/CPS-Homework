@@ -172,7 +172,8 @@ public class UvegHazPublisher {
 
             /* Create data sample for writing */
             UvegHaz instance = new UvegHaz();
-           
+           instance.ID=ID;
+           instance.Value=Value;
 //TODO: Adat innen küldhetõ
             InstanceHandle_t instance_handle = InstanceHandle_t.HANDLE_NIL;
             /* For a data type that has a key, if the same instance is going to be
@@ -182,7 +183,7 @@ public class UvegHazPublisher {
 
 
 
-                System.out.println("Writing...");
+                System.out.println("Writing in topic: "+ topic.get_name() + " the id: "+ ID + " and with the value: "+Value);
 
                 /* Modify the instance to be written here */
 

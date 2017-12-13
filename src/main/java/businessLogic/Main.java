@@ -47,7 +47,6 @@ public class Main {
 		
 		while(true) {
 		cloudCntr++;
-		
 		systemState=decision();
 
 		for (AbstractActuator abstractActuator : actuators) {
@@ -76,16 +75,18 @@ public class Main {
 	public static States decision() {
 		
 		Profile profile=new Profile();
-		
+		double profileTemp=profile.getProfile();		
 		alert="";
 		double oldtemperature=temperature;
+
 		temperature=tempSensor.getTemp();
 		if(anomalyCheck(oldtemperature,temperature)) {
 			temperature=oldtemperature;
 			return States.NORMAL;
 		}
 		
-		double profileTemp=profile.getProfile();
+
+
 		if(temperature<=profileTemp-profilDiff) {
 			alert="too cold temperature";
 			System.out.println(alert);
